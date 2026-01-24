@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VolScale戦略 vs ヘッジファンド 詳細比較分析（検証済み v3）</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #1a365d;
+            --secondary: #2c5282;
+            --accent: #38a169;
+            --warning: #dd6b20;
+            --danger: #e53e3e;
+            --bg-light: #f7fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --border: #e2e8f0;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 { font-size: 2.2rem; margin-bottom: 15px; font-weight: 700; }
+        .header .subtitle { font-size: 1.05rem; opacity: 0.9; }
+        .header .date { margin-top: 20px; font-size: 0.9rem; opacity: 0.8; }
+        .header .version {
+            display: inline-block;
+            background: var(--accent);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        }
+        
+        .section h2 {
+            color: var(--primary);
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--accent);
+            display: inline-block;
+        }
+        
+        .section h3 {
+            color: var(--secondary);
+            font-size: 1.15rem;
+            margin: 25px 0 15px 0;
+        }
+        
+        .exec-summary {
+            background: linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%);
+            border-left: 5px solid var(--accent);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        
+        .exec-summary h3 { color: var(--accent); margin-top: 0; }
+        .exec-summary ul { list-style: none; padding: 0; }
+        .exec-summary li { padding: 8px 0; padding-left: 25px; position: relative; }
+        .exec-summary li::before {
+            content: "✓";
+            color: var(--accent);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        .data-verified {
+            background: #fffaf0;
+            border-left: 5px solid var(--warning);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        .data-verified strong { color: var(--warning); }
+        
+        .bias-warning {
+            background: #fff5f5;
+            border-left: 5px solid var(--danger);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        .bias-warning strong { color: var(--danger); }
+        
+        .table-container { overflow-x: auto; margin: 20px 0; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        tr:nth-child(even) { background: #f8fafc; }
+        tr:hover { background: #edf2f7; }
+        
+        .highlight-row {
+            background: #e6fffa !important;
+            font-weight: 600;
+        }
+        
+        .highlight-row td:first-child { border-left: 4px solid var(--accent); }
+        
+        .positive { color: var(--accent); font-weight: 600; }
+        .negative { color: var(--danger); font-weight: 600; }
+        .neutral { color: var(--warning); font-weight: 600; }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 30px 0;
+        }
+        
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .chart-row .chart-container { height: 350px; }
+        
+        .source-box {
+            background: #f0f4f8;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .source-box h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+        
+        .source-list {
+            list-style: decimal;
+            padding-left: 25px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .source-list li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .source-list a {
+            color: var(--secondary);
+            text-decoration: none;
+            word-break: break-all;
+        }
+        
+        .source-list a:hover { text-decoration: underline; }
+        
+        .tier-card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .tier-card.tier-0 { border-color: #ffd700; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); }
+        .tier-card.tier-1 { border-color: #c0c0c0; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); }
+        .tier-card.tier-2 { border-color: #38a169; background: linear-gradient(135deg, #f0fff4 0%, #e6fffa 100%); }
+        
+        .tier-card h4 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tier-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .tier-0 .tier-badge { background: #ffd700; color: #1a202c; }
+        .tier-1 .tier-badge { background: #94a3b8; color: white; }
+        .tier-2 .tier-badge { background: #38a169; color: white; }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .metric-card .label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        
+        .metric-card .value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .metric-card .value.green { color: var(--accent); }
+        .metric-card .value.red { color: var(--danger); }
+        
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            z-index: 1000;
+            text-decoration: none;
+        }
+        
+        .back-button:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+        
+        .back-button svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.6rem; }
+            .section { padding: 20px; }
+            table { font-size: 0.75rem; }
+            .chart-row { grid-template-columns: 1fr; }
+            .back-button {
+                top: 10px;
+                left: 10px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 前のページへ戻るボタン -->
+    <a href="javascript:history.back()" class="back-button" onclick="if(history.length <= 1) { window.location.href='/analysis-results'; return false; }">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        前のページへ戻る
+    </a>
+    
+    <div class="header">
+        <h1>VolScale戦略 vs ヘッジファンド<br>詳細比較分析</h1>
+        <p class="subtitle">検証済みデータに基づくパフォーマンス評価</p>
+        <span class="version">🔍 データ検証済み v3.0</span>
+        <p class="date">作成日: 2026年1月24日 | バックテスト期間: 2004-01 〜 2025-12（256ヶ月）</p>
+    </div>
+    
+    <div class="container">
+        <!-- Executive Summary -->
+        <div class="section">
+            <h2>エグゼクティブサマリー</h2>
+            
+            <div class="exec-summary">
+                <h3>主要な発見</h3>
+                <ul>
+                    <li><strong>推奨戦略: D3+防御型_VolScale</strong> — CAGR 20.42%、Sharpe 1.22、Sortino 2.82</li>
+                    <li><strong>最高リターン: D3+防御型</strong> — CAGR 30.59%（ただしMaxDD -29.34%）</li>
+                    <li><strong>業界ポジション</strong>: 上位戦略はヘッジファンド業界上位5-10%に相当</li>
+                    <li><strong>D.E. Shaw Composite（12.7%）を大幅に上回るパフォーマンス</strong></li>
+                    <li><strong>SPY（9.20%）の2.2倍〜3.3倍のCAGR</strong></li>
+                </ul>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">推奨戦略 CAGR</div>
+                    <div class="value green">20.42%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">推奨戦略 Sharpe</div>
+                    <div class="value green">1.22</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">推奨戦略 MaxDD</div>
+                    <div class="value">-22.16%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">推奨戦略 Sortino</div>
+                    <div class="value green">2.82</div>
+                </div>
+            </div>
+            
+            <div class="bias-warning">
+                <strong>⚠️ サバイバーシップバイアス警告:</strong> 本バックテストは現在のS&P100/500構成銘柄を使用しており、過去に上場廃止・倒産した銘柄は含まれていません。保守的補正として CAGR -2.0%/年、Sharpe -0.15、MaxDD -7.0%を考慮することを推奨します。
+            </div>
+        </div>
+        
+        <!-- Section 1: VolScale Strategy Performance -->
+        <div class="section">
+            <h2>1. VolScale戦略パフォーマンス一覧</h2>
+            
+            <h3>1.1 全戦略パフォーマンス（取引コスト0.2%適用後）</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>戦略名</th>
+                            <th>CAGR</th>
+                            <th>MaxDD</th>
+                            <th>Sharpe</th>
+                            <th>Sortino</th>
+                            <th>Calmar</th>
+                            <th>評価</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>D3</strong></td>
+                            <td class="positive">32.51%</td>
+                            <td class="negative">-48.28%</td>
+                            <td>1.13</td>
+                            <td>1.98</td>
+                            <td>0.67</td>
+                            <td>最高リターン（高リスク）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D3+防御型</strong></td>
+                            <td class="positive">30.59%</td>
+                            <td class="negative">-29.34%</td>
+                            <td>1.16</td>
+                            <td>2.25</td>
+                            <td class="positive">1.04</td>
+                            <td>高リターン＆改善DD</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D3_VolScale</strong></td>
+                            <td class="positive">27.25%</td>
+                            <td class="negative">-30.76%</td>
+                            <td class="positive">1.24</td>
+                            <td class="positive">2.71</td>
+                            <td>0.89</td>
+                            <td>最高Sharpe</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td><strong>D3+防御型_VolScale</strong><br>⭐推奨</td>
+                            <td class="positive">20.42%</td>
+                            <td class="positive">-22.16%</td>
+                            <td class="positive">1.22</td>
+                            <td class="positive">2.82</td>
+                            <td>0.92</td>
+                            <td>最適バランス</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D2</strong></td>
+                            <td class="positive">20.73%</td>
+                            <td class="negative">-43.73%</td>
+                            <td>0.97</td>
+                            <td>1.62</td>
+                            <td>0.47</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D2_VolScale</strong></td>
+                            <td class="positive">19.58%</td>
+                            <td class="negative">-37.17%</td>
+                            <td>0.96</td>
+                            <td>1.55</td>
+                            <td>0.53</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D2+防御型</strong></td>
+                            <td class="neutral">18.06%</td>
+                            <td class="negative">-31.58%</td>
+                            <td>0.93</td>
+                            <td>1.48</td>
+                            <td>0.57</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D2+防御型_VolScale</strong></td>
+                            <td class="neutral">11.50%</td>
+                            <td class="positive">-18.88%</td>
+                            <td>0.89</td>
+                            <td>1.39</td>
+                            <td>0.61</td>
+                            <td>最小DD（低リターン）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SPY（ベンチマーク）</strong></td>
+                            <td class="neutral">9.20%</td>
+                            <td class="negative">-49.31%</td>
+                            <td>0.66</td>
+                            <td>0.86</td>
+                            <td>0.19</td>
+                            <td>参考</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>1.2 取引コストの影響</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>戦略名</th>
+                            <th>CAGR (0%)</th>
+                            <th>CAGR (0.2%)</th>
+                            <th>コスト影響</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>D3</td>
+                            <td>32.67%</td>
+                            <td>32.51%</td>
+                            <td class="negative">-0.16%</td>
+                        </tr>
+                        <tr>
+                            <td>D3+防御型</td>
+                            <td>30.73%</td>
+                            <td>30.59%</td>
+                            <td class="negative">-0.14%</td>
+                        </tr>
+                        <tr>
+                            <td>D3_VolScale</td>
+                            <td>27.43%</td>
+                            <td>27.25%</td>
+                            <td class="negative">-0.18%</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td>D3+防御型_VolScale</td>
+                            <td>20.58%</td>
+                            <td>20.42%</td>
+                            <td class="negative">-0.16%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="data-verified">
+                <strong>📌 取引コスト設定:</strong> 往復0.2%（売買時のスプレッド・手数料を想定）。マーケットインパクト、タイミングコスト、流動性コストは未考慮のため、実運用ではさらなる劣化の可能性あり。
+            </div>
+        </div>
+        
+        <!-- Section 2: Verified Hedge Fund Data -->
+        <div class="section">
+            <h2>2. 検証済みヘッジファンドパフォーマンス</h2>
+            
+            <h3>2.1 主要ファンド一覧（公開情報から検証）</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ファンド名</th>
+                            <th>2024年<br>リターン</th>
+                            <th>長期平均<br>CAGR</th>
+                            <th>Sharpe</th>
+                            <th>AUM (USD)</th>
+                            <th>特記事項</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #fef3c7;">
+                            <td><strong>Renaissance Medallion</strong></td>
+                            <td class="positive">30%</td>
+                            <td class="positive">39% net</td>
+                            <td>~2.0+</td>
+                            <td>$12B</td>
+                            <td>従業員限定、史上最高</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Citadel Wellington</strong></td>
+                            <td class="positive">15.2%</td>
+                            <td class="positive">19.5%</td>
+                            <td>~2.5</td>
+                            <td>$65B</td>
+                            <td>since 1990</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Point72</strong></td>
+                            <td class="positive">19%</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>$42B</td>
+                            <td>Steve Cohen</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D.E. Shaw Oculus</strong></td>
+                            <td class="positive">36.1%</td>
+                            <td class="neutral">13.7%</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>マクロ戦略</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Millennium Management</strong></td>
+                            <td class="positive">15%</td>
+                            <td class="neutral">14%</td>
+                            <td>2.5</td>
+                            <td>$72B</td>
+                            <td>since 1989</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D.E. Shaw Composite</strong></td>
+                            <td class="positive">18%</td>
+                            <td class="neutral">12.7%</td>
+                            <td>-</td>
+                            <td>$65B</td>
+                            <td>since 2001</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AQR Apex</strong></td>
+                            <td class="positive">15.1%</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>$114B全体</td>
+                            <td>マルチストラテジー</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bridgewater Pure Alpha</strong></td>
+                            <td class="neutral">11.3%</td>
+                            <td class="neutral">高一桁%</td>
+                            <td>-</td>
+                            <td>$92B</td>
+                            <td>グローバルマクロ</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>2.2 業界ベンチマーク（検証済み）</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>指標</th>
+                            <th>数値</th>
+                            <th>期間</th>
+                            <th>ソース</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>HFRI Fund Weighted Composite</strong></td>
+                            <td class="positive">10.01%</td>
+                            <td>2024年</td>
+                            <td>HFR</td>
+                        </tr>
+                        <tr>
+                            <td><strong>業界平均5年CAGR</strong></td>
+                            <td class="neutral">7.2%</td>
+                            <td>2017-2021</td>
+                            <td>BarclayHedge</td>
+                        </tr>
+                        <tr>
+                            <td><strong>業界平均Sharpe</strong></td>
+                            <td class="neutral">0.86</td>
+                            <td>5年平均</td>
+                            <td>BarclayHedge</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Top 50 HF CAGR</strong></td>
+                            <td class="positive">15.5%</td>
+                            <td>5年平均</td>
+                            <td>Institutional Investor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Top 50 HF Sharpe</strong></td>
+                            <td class="positive">1.43</td>
+                            <td>5年平均</td>
+                            <td>Institutional Investor</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Section 3: Comparison Charts -->
+        <div class="section">
+            <h2>3. VolScale vs ヘッジファンド比較</h2>
+            
+            <div class="chart-container">
+                <canvas id="cagrChart"></canvas>
+            </div>
+            
+            <h3>3.1 詳細比較表</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ファンド/戦略</th>
+                            <th>CAGR</th>
+                            <th>Sharpe</th>
+                            <th>MaxDD</th>
+                            <th>備考</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #fef3c7;">
+                            <td><strong>Renaissance Medallion</strong></td>
+                            <td class="positive">39% net</td>
+                            <td>~2.0+</td>
+                            <td>-</td>
+                            <td>従業員限定、別格</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D3+防御型</strong></td>
+                            <td class="positive">30.59%</td>
+                            <td>1.16</td>
+                            <td>-29.34%</td>
+                            <td>本戦略（高リターン）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D3_VolScale</strong></td>
+                            <td class="positive">27.25%</td>
+                            <td class="positive">1.24</td>
+                            <td>-30.76%</td>
+                            <td>本戦略（最高Sharpe）</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td><strong>D3+防御型_VolScale ⭐</strong></td>
+                            <td class="positive">20.42%</td>
+                            <td class="positive">1.22</td>
+                            <td class="positive">-22.16%</td>
+                            <td>本戦略（推奨）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Citadel Wellington</strong></td>
+                            <td class="positive">19.5%</td>
+                            <td>~2.5</td>
+                            <td>-</td>
+                            <td>since 1990</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Point72</strong></td>
+                            <td class="neutral">19%</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>2024年</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Top 50 HF平均</strong></td>
+                            <td class="neutral">15.5%</td>
+                            <td>1.43</td>
+                            <td>-10.7%</td>
+                            <td>5年平均</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Millennium</strong></td>
+                            <td class="neutral">14%</td>
+                            <td>2.5</td>
+                            <td>-</td>
+                            <td>since inception</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D.E. Shaw Composite</strong></td>
+                            <td class="neutral">12.7%</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>since 2001</td>
+                        </tr>
+                        <tr>
+                            <td><strong>HFRI業界平均</strong></td>
+                            <td class="neutral">10.01%</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>2024年</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SPY</strong></td>
+                            <td class="neutral">9.20%</td>
+                            <td>0.66</td>
+                            <td>-49.31%</td>
+                            <td>ベンチマーク</td>
+                        </tr>
+                        <tr>
+                            <td><strong>業界5年平均</strong></td>
+                            <td class="negative">7.2%</td>
+                            <td>0.86</td>
+                            <td>-</td>
+                            <td>BarclayHedge</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="chart-row">
+                <div class="chart-container">
+                    <canvas id="sharpeChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="riskReturnChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section 4: Industry Positioning -->
+        <div class="section">
+            <h2>4. 業界内ポジショニング</h2>
+            
+            <div class="tier-card tier-0">
+                <h4><span class="tier-badge">TIER 0</span> 伝説級（Top 0.1%）</h4>
+                <p><strong>Renaissance Medallion</strong>: CAGR 39% net、Sharpe 2.0+<br>
+                <span style="font-size:0.85rem; color: var(--text-secondary);">従業員限定、外部投資家アクセス不可。史上最高のパフォーマンス。</span></p>
+            </div>
+            
+            <div class="tier-card tier-1">
+                <h4><span class="tier-badge">TIER 1</span> トップ機関（Top 1-3%）</h4>
+                <p><strong>Citadel Wellington</strong>: CAGR 19.5%、Sharpe ~2.5<br>
+                <strong>Millennium</strong>: CAGR 14%、Sharpe 2.5<br>
+                <span style="font-size:0.85rem; color: var(--text-secondary);">$60B+の巨大マルチストラテジー。高いSharpe比が特徴。</span></p>
+            </div>
+            
+            <div class="tier-card tier-2">
+                <h4><span class="tier-badge">TIER 2</span> 優良（Top 5-10%）← VolScale戦略の位置</h4>
+                <p>
+                <strong>D3+防御型_VolScale</strong>: CAGR 20.42%、Sharpe 1.22、MaxDD -22.16% ✓<br>
+                <strong>D3_VolScale</strong>: CAGR 27.25%、Sharpe 1.24、MaxDD -30.76%<br>
+                <strong>D.E. Shaw Composite</strong>: CAGR 12.7%（長期）<br>
+                <strong>Point72</strong>: CAGR ~19%（2024年）<br>
+                <span style="font-size:0.85rem; color: var(--text-secondary);">高品質な機関投資家向けファンドと同等〜上回るパフォーマンス。</span></p>
+            </div>
+            
+            <div class="data-verified">
+                <strong>⚠️ 重要な比較上の注意点:</strong>
+                <ul style="margin-top:10px; padding-left:20px; font-size:0.9rem;">
+                    <li>Citadel/MillenniumのSharpe 2.5はVolScale（1.22-1.24）より高い</li>
+                    <li>しかしCAGRベースではVolScale上位戦略がD.E. Shaw等を上回る</li>
+                    <li>大手ファンドは$60B+のスケールで運用（スケールの制約が異なる）</li>
+                    <li><strong>サバイバーシップバイアス補正後</strong>でも業界上位10%相当と推定</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Section 5: Bias Analysis -->
+        <div class="section">
+            <h2>5. バイアス・コスト分析</h2>
+            
+            <h3>5.1 サバイバーシップバイアス補正</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>バイアス項目</th>
+                            <th>推定影響</th>
+                            <th>保守的補正値</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CAGR過大評価</td>
+                            <td>+1〜4%/年</td>
+                            <td class="negative">-2.0%/年</td>
+                        </tr>
+                        <tr>
+                            <td>Sharpe過大評価</td>
+                            <td>+0.1〜0.3</td>
+                            <td class="negative">-0.15</td>
+                        </tr>
+                        <tr>
+                            <td>MaxDD過小評価</td>
+                            <td>約14%過小</td>
+                            <td class="negative">-7.0%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>5.2 補正後推定値（D3+防御型_VolScale）</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>指標</th>
+                            <th>バックテスト値</th>
+                            <th>補正後推定</th>
+                            <th>業界比較</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CAGR</td>
+                            <td>20.42%</td>
+                            <td class="positive">18.42%</td>
+                            <td>Top 50 HF (15.5%)を上回る</td>
+                        </tr>
+                        <tr>
+                            <td>Sharpe</td>
+                            <td>1.22</td>
+                            <td class="positive">1.07</td>
+                            <td>業界平均(0.86)を上回る</td>
+                        </tr>
+                        <tr>
+                            <td>MaxDD</td>
+                            <td>-22.16%</td>
+                            <td class="negative">-29.16%</td>
+                            <td>D3+防御型と同等</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>5.3 未考慮コスト</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>説明</th>
+                            <th>推定影響</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>マーケットインパクト</td>
+                            <td>大口注文による市場価格への影響</td>
+                            <td>規模依存</td>
+                        </tr>
+                        <tr>
+                            <td>タイミングコスト</td>
+                            <td>月初リバランス固定による機会損失</td>
+                            <td>-0.1〜0.3%/年</td>
+                        </tr>
+                        <tr>
+                            <td>流動性コスト</td>
+                            <td>低流動性銘柄での執行コスト増加</td>
+                            <td>銘柄依存</td>
+                        </tr>
+                        <tr>
+                            <td>税金</td>
+                            <td>キャピタルゲイン税、配当税</td>
+                            <td>投資家依存</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Section 6: Recommendations -->
+        <div class="section">
+            <h2>6. 結論と推奨</h2>
+            
+            <h3>6.1 戦略別推奨</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>投資家タイプ</th>
+                            <th>推奨戦略</th>
+                            <th>理由</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td><strong>バランス重視（推奨）</strong></td>
+                            <td><strong>D3+防御型_VolScale</strong></td>
+                            <td>Sortino 2.82（最高）、MaxDD -22.16%（許容範囲）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>リスク調整重視</strong></td>
+                            <td><strong>D3_VolScale</strong></td>
+                            <td>Sharpe 1.24（最高）、CAGR 27.25%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>最大リターン追求</strong></td>
+                            <td><strong>D3+防御型</strong></td>
+                            <td>CAGR 30.59%（最高）、Calmar 1.04</td>
+                        </tr>
+                        <tr>
+                            <td><strong>低リスク重視</strong></td>
+                            <td><strong>D2+防御型_VolScale</strong></td>
+                            <td>MaxDD -18.88%（最小）</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>6.2 最終推奨</h3>
+            <div class="table-container">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td style="background: var(--primary); color: white; font-weight: bold; width: 200px;">最も推奨する戦略</td>
+                            <td style="background: #e6fffa; font-weight: bold; font-size: 1.1rem;">D3+防御型_VolScale</td>
+                        </tr>
+                        <tr>
+                            <td><strong>パフォーマンス</strong></td>
+                            <td>CAGR 20.42%、Sharpe 1.22、Sortino 2.82、MaxDD -22.16%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>推奨理由</strong></td>
+                            <td>最高Sortino（下方リスク管理）、許容可能なMaxDD、D.E. Shawを上回るCAGR</td>
+                        </tr>
+                        <tr>
+                            <td><strong>業界内ポジション</strong></td>
+                            <td>Top 5-10%（補正後でも上位10%相当）</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SPY比</strong></td>
+                            <td>CAGR 2.2倍、Sharpe 1.8倍、MaxDD 2.2倍改善</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>6.3 重要な留意事項</h3>
+            <ul style="padding-left: 20px; line-height: 2; font-size: 0.95rem;">
+                <li><strong>バックテスト結果</strong>であり、将来のパフォーマンスを保証しない</li>
+                <li><strong>サバイバーシップバイアス</strong>: 現在のS&P構成銘柄のみ使用（CAGR +1〜4%過大評価の可能性）</li>
+                <li>最低<strong>2-3年のライブトレード検証</strong>を推奨</li>
+                <li><strong>2008年級の金融危機</strong>ではMaxDDが拡大する可能性（バックテスト期間に含まれるが、将来は予測不能）</li>
+                <li>大手ファンドは巨大なインフラと人員を持つ（Millennium: 6,300人、13M取引/日）ため単純比較に限界あり</li>
+            </ul>
+        </div>
+        
+        <!-- Section 7: Data Sources -->
+        <div class="section">
+            <h2>7. データソース・引用元</h2>
+            
+            <div class="source-box">
+                <h4>📚 VolScale戦略データ</h4>
+                <ul class="source-list">
+                    <li>バックテスト期間: 2004-01 〜 2025-12（256ヶ月）</li>
+                    <li>データソース: holygrail.parquet（520銘柄、5,534取引日）</li>
+                    <li>リバランス頻度: 月次（月初）</li>
+                    <li>取引コスト: 0.2%（往復）適用</li>
+                    <li>生成日時: 2026-01-24</li>
+                </ul>
+            </div>
+            
+            <div class="source-box">
+                <h4>📚 ヘッジファンドデータソース</h4>
+                <ol class="source-list">
+                    <li><strong>Renaissance Medallion</strong>: Hedgeweek (Jan 2025), Institutional Investor, Wikipedia<br>
+                        <a href="https://www.hedgeweek.com/renaissance-tech-and-two-sigma-lead-2024-quant-gains/" target="_blank">hedgeweek.com/renaissance-tech-and-two-sigma-lead-2024-quant-gains/</a></li>
+                    <li><strong>Citadel Wellington</strong>: CNBC (Jan 2025, Jan 2026), KBRA Rating<br>
+                        <a href="https://www.cnbc.com/2025/01/02/ken-griffins-flagship-hedge-fund-at-citadel-climbs-15point1percent-in-2024.html" target="_blank">cnbc.com/.../ken-griffins-flagship-hedge-fund-at-citadel...</a></li>
+                    <li><strong>Millennium Management</strong>: Hedgeweek, Institutional Investor Rich List 2024<br>
+                        <a href="https://www.hedgeweek.com/millennium-posts-15-2024-gain-but-lags-sp-500/" target="_blank">hedgeweek.com/millennium-posts-15-2024-gain...</a></li>
+                    <li><strong>D.E. Shaw</strong>: Alternatives Watch, Institutional Investor<br>
+                        <a href="https://www.alternativeswatch.com/2025/01/02/de-shaw-posts-strong-2024-returns-oculus-composite-hedge-funds/" target="_blank">alternativeswatch.com/.../de-shaw-posts-strong-2024...</a></li>
+                    <li><strong>Point72</strong>: Hedgeweek, Bloomberg (Jan 2025)<br>
+                        <a href="https://www.hedgeweek.com/point72-to-return-5bn-after-strong-2024-gains/" target="_blank">hedgeweek.com/point72-to-return-5bn...</a></li>
+                    <li><strong>AQR Capital</strong>: Bloomberg, Institutional Investor<br>
+                        <a href="https://www.bnnbloomberg.ca/investing/2025/01/03/aqr-multistrategy-returns-15-in-2024-on-equity-macro-gains/" target="_blank">bnnbloomberg.ca/.../aqr-multistrategy-returns-15...</a></li>
+                    <li><strong>Bridgewater</strong>: Reuters, Yahoo Finance (Jan 2026)<br>
+                        <a href="https://finance.yahoo.com/news/bridgewater-flagship-fund-books-33-211515466.html" target="_blank">finance.yahoo.com/.../bridgewater-flagship-fund...</a></li>
+                    <li><strong>業界ベンチマーク</strong>: HFR (HFRI +10.01% in 2024), BarclayHedge (5Y avg 7.2%, Sharpe 0.86)<br>
+                        <a href="https://thefullfx.com/hedge-funds-end-2024-on-a-mixed-note-hfr/" target="_blank">thefullfx.com/hedge-funds-end-2024...</a></li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>— End of Report —</p>
+            <p style="margin-top: 15px; font-size: 0.85rem; color: #718096;">
+                本レポートは情報提供を目的としており、投資助言ではありません。<br>
+                投資判断はご自身の責任において行ってください。<br>
+                データ検証済み v3.0 | 2026年1月24日作成
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // CAGR Comparison Chart
+        const cagrCtx = document.getElementById('cagrChart').getContext('2d');
+        new Chart(cagrCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Medallion', 'D3+防御型', 'D3_VolScale', 'D3+防御型_VolScale⭐', 'Citadel', 'Point72', 'Top50 HF', 'Millennium', 'D.E.Shaw', 'HFRI', 'SPY', '業界平均'],
+                datasets: [{
+                    label: 'CAGR (%)',
+                    data: [39, 30.59, 27.25, 20.42, 19.5, 19, 15.5, 14, 12.7, 10.01, 9.20, 7.2],
+                    backgroundColor: [
+                        '#ffd700',
+                        '#38a169', '#38a169', '#2f855a',
+                        '#4299e1', '#4299e1', '#4299e1', '#4299e1', '#718096',
+                        '#a0aec0', '#cbd5e0', '#e53e3e'
+                    ],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'CAGR比較（VolScale戦略 vs ヘッジファンド）',
+                        font: { size: 15 }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 45,
+                        title: { display: true, text: 'CAGR (%)' }
+                    },
+                    x: {
+                        ticks: { font: { size: 10 } }
+                    }
+                }
+            }
+        });
+        
+        // Sharpe Comparison Chart
+        const sharpeCtx = document.getElementById('sharpeChart').getContext('2d');
+        new Chart(sharpeCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Millennium', 'Citadel', 'Medallion', 'Top50 HF', 'D3_VolScale', 'D3+防御型_VolScale⭐', 'D3+防御型', 'D3', '業界平均', 'SPY'],
+                datasets: [{
+                    label: 'Sharpe Ratio',
+                    data: [2.5, 2.5, 2.0, 1.43, 1.24, 1.22, 1.16, 1.13, 0.86, 0.66],
+                    backgroundColor: [
+                        '#4299e1', '#4299e1', '#ffd700', '#718096',
+                        '#38a169', '#2f855a', '#38a169', '#38a169',
+                        '#e53e3e', '#cbd5e0'
+                    ],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Sharpe比較',
+                        font: { size: 14 }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 3,
+                        title: { display: true, text: 'Sharpe Ratio' }
+                    }
+                }
+            }
+        });
+        
+        // Risk-Return Scatter Chart
+        const rrCtx = document.getElementById('riskReturnChart').getContext('2d');
+        new Chart(rrCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'D3+防御型_VolScale⭐',
+                        data: [{ x: 22.16, y: 20.42 }],
+                        backgroundColor: '#2f855a',
+                        pointRadius: 14,
+                        pointStyle: 'star'
+                    },
+                    {
+                        label: 'D3_VolScale',
+                        data: [{ x: 30.76, y: 27.25 }],
+                        backgroundColor: '#38a169',
+                        pointRadius: 10
+                    },
+                    {
+                        label: 'D3+防御型',
+                        data: [{ x: 29.34, y: 30.59 }],
+                        backgroundColor: '#48bb78',
+                        pointRadius: 10
+                    },
+                    {
+                        label: 'D3',
+                        data: [{ x: 48.28, y: 32.51 }],
+                        backgroundColor: '#9ae6b4',
+                        pointRadius: 8
+                    },
+                    {
+                        label: 'Top 50 HF',
+                        data: [{ x: 10.7, y: 15.5 }],
+                        backgroundColor: '#4299e1',
+                        pointRadius: 8
+                    },
+                    {
+                        label: 'D.E. Shaw',
+                        data: [{ x: 18, y: 12.7 }],
+                        backgroundColor: '#805ad5',
+                        pointRadius: 8
+                    },
+                    {
+                        label: 'SPY',
+                        data: [{ x: 49.31, y: 9.20 }],
+                        backgroundColor: '#e53e3e',
+                        pointRadius: 8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'リスク・リターン（左上が理想）',
+                        font: { size: 14 }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 9 }, boxWidth: 12 }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'MaxDD (%)' },
+                        reverse: true,
+                        min: 5,
+                        max: 55
+                    },
+                    y: {
+                        title: { display: true, text: 'CAGR (%)' },
+                        min: 5,
+                        max: 35
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
