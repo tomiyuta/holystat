@@ -1667,6 +1667,52 @@ export default function AnalysisResults() {
 
           {/* 年次詳細タブ */}
           <TabsContent value="yearly" className="space-y-6">
+            {/* MaxDDと年次リターンの違いの説明 */}
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-amber-400">
+                  <AlertTriangle className="h-5 w-5" />
+                  MaxDD（最大ドローダウン）と年次リターンの違い
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <p className="text-muted-foreground">
+                  概要タブに表示される<span className="text-amber-400 font-semibold">MaxDD（最大ドローダウン）</span>と、
+                  本タブに表示される<span className="text-amber-400 font-semibold">年次リターンの最小値</span>は異なる指標です。
+                  これは矛盾ではなく、計算方法の違いによる正常な挙動です。
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg bg-background/50 border border-border">
+                    <h4 className="font-semibold text-foreground mb-2">MaxDD（最大ドローダウン）</h4>
+                    <ul className="space-y-1 text-muted-foreground text-xs">
+                      <li>• 基準点: <span className="text-foreground">過去最高値（ピーク）</span></li>
+                      <li>• 計算期間: <span className="text-foreground">全期間を通じた連続的な推移</span></li>
+                      <li>• 意味: <span className="text-foreground">投資家が経験しうる最悪の下落シナリオ</span></li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-lg bg-background/50 border border-border">
+                    <h4 className="font-semibold text-foreground mb-2">年次リターン</h4>
+                    <ul className="space-y-1 text-muted-foreground text-xs">
+                      <li>• 基準点: <span className="text-foreground">各年の年初値</span></li>
+                      <li>• 計算期間: <span className="text-foreground">各年で独立して計算</span></li>
+                      <li>• 意味: <span className="text-foreground">年初から年末までの変動率</span></li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-background/50 border border-border">
+                  <h4 className="font-semibold text-foreground mb-2">具体例: D3+防御型</h4>
+                  <p className="text-muted-foreground text-xs">
+                    2007年に+145.85%の大幅上昇でピークを形成し、2008年に下落。
+                    MaxDDは2007年中のピークから2008年の底までの下落幅（<span className="text-red-400">-29.34%</span>）を捕捉しますが、
+                    年次リターンは2008年1月1日を基準とするため<span className="text-red-400">-18.86%</span>のみを記録します。
+                    年をまたぐ下落は年次リターンでは分断されるため、MaxDDの方が大きくなります。
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             <YearlyPerformanceTable13 />
           </TabsContent>
 
